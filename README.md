@@ -76,6 +76,82 @@ Acción:
 
 
 ## Diagramas de la arquitectura
+El siguiente diagrama muestra la interconexión entre los módulos principales del sistema de monitoreo ambiental y control de ventilación implementado en la FPGA. Cada bloque representa un componente funcional independiente y las señales que intercambian permiten realizar la lectura del sensor, el control del ventilador y la visualización en la pantalla LCD.
+
+
+![Diagrama ](conexionsistema.png)
+
+1. Módulo DHT11 Sensor (dht11_sensor.dht11_inst)
+
+Este bloque se encarga de gestionar la comunicación con el sensor DHT11.
+Sus principales funciones son:
+
+- Leer la señal digital del sensor (dht11_io).
+
+- Extraer y entregar los valores de temperatura `( temp1 , temp2 )` y humedad `(hum1, hum2)`.
+
+- Proveer señales internas de depuración `(state_debug)`.
+
+- Trabaja sincronizado con el reloj global `(clk)` y se reinicia mediante `rst_n`.
+
+La información generada por este módulo se distribuye hacia los módulos de control del ventilador y de la LCD.
+
+2. Módulo de Control de Ventilador (fsm_fan_control: fan_ctrl)
+
+Este bloque implementa la máquina de estados encargada de activar o desactivar el ventilador según la temperatura medida.
+Recibe:
+
+- El valor de temperatura desde el módulo DHT11.
+
+- La señal de reloj y reset.
+
+Como salida genera:
+
+- fan_enable, señal que controla el relé encargado de energizar los ventiladores.
+
+Su funcionamiento sigue la lógica:
+
+- Activa el ventilador si la temperatura es mayor a cierto umbral.
+
+- Lo apaga si la temperatura desciende por debajo del límite inferior.
+
+3. Módulo Controlador de LCD (LCD1602_controller: lcd_ctrl)
+
+Este módulo recibe los valores numéricos de temperatura y humedad provenientes del sensor y se encarga de formatearlos y enviarlos a la pantalla LCD 16x2.
+
+Entradas importantes:
+
+Datos de temperatura y humedad (parte entera y fraccionaria).
+
+Señales de reloj `(clk)`, reset `(reset)` y sincronización `(ready_i)`.
+
+Salidas hacia la LCD:
+
+lcd_data[7:0]: bus de datos hacia la pantalla.
+
+lcd_e, lcd_rs, lcd_rw: señales de control para la correcta escritura en el display.
+
+El módulo asegura que la información se actualice de manera ordenada y comprensible.
+
+4. Señales globales y sistema general
+
+clk: señal de reloj compartida por todos los módulos, garantizando sincronización.
+
+rst_n / reset: permite reiniciar el sistema completo.
+
+ready_i: señal que habilita la actualización de la LCD.
+
+state[2:0]: señal que refleja el estado actual del sistema, útil para depuración.
+
+Resumen general
+
+El sistema completo integra tres módulos principales:
+
+- Lectura del sensor DHT11 → obtiene temperatura y humedad.
+
+- Control del ventilador → decide cuándo activar el relé mediante fan_enable.
+
+- Controlador de LCD → muestra los valores ambientales en pantalla.
 
 
 ## Simulaciones
